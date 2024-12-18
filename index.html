@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фильмы</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            cursor: pointer;
+            background-color: black;
+            color: white;
+        }
+        
+        .error {
+            color: red;
+        }
+        
+        .actions button {
+            display: block;
+            margin: 5px 0;
+        }
+        
+        input[type="text"],
+        [type="number"] {
+            width: 1000px;
+            height: 5px;
+            font-size: 16px;
+            padding: 10px;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Список фильмов</h1>
+    <form id="movieForm">
+        <input type="hidden" id="editIndex" value="-1">
+        <label>
+            Название:
+            <br>
+            <input type="text" id="title">
+        </label>
+        <br>
+        <br>
+
+        <label>
+            Жанр:
+            <br>
+            <input type="text" id="genre">
+        </label>
+        <br>
+        <br>
+        <label>
+            Год:
+            <br>
+            <input type="number" id="year">
+        </label>
+        <br>
+        <br>
+        <label>
+            Успели посмотреть?:
+            <br>
+            <select id="watched">
+                <option value="Да">Да</option>
+                <option value="Нет">Нет</option>
+            </select>
+        </label>
+        <br>
+        <br>
+        <button type="submit">Сохранить</button>
+        <span class="error" id="formError"></span>
+    </form>
+    <br>
+
+    <label>
+        Сортировать:
+        <select id="sortCriteria">
+            <option value="title">Название</option>
+            <option value="genre">Жанр</option>
+            <option value="year">Год</option>
+            <option value="watched">Успели посмотреть?</option>
+        </select>
+    </label>
+    <br>
+    <br>
+
+    <table id="movieTable">
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th>Жанр</th>
+                <th>Год </th>
+                <th>Успели посмотреть?</th>
+                <th>Действие</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+        const movieForm = document.getElementById('movieForm');
+        const movieTable = document.getElementById('movieTable').querySelector('tbody');
+        const formError = document.getElementById('formError');
+        const sortCriteria = document.getElementById('sortCriteria');
+        let movies = JSON.parse(localStorage.getItem('movies')) || [];
+        const renderMovies = () => {
+            movieTable.innerHTML = '';
+            movies.forEach((movie, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${movie.title}</td>
+                    <td>${movie.genre}</td>
+                    <td>${movie.year}</td>
+                    <td>${movie.watched}</td>
+                    <td class="actions">
+                        <button onclick="editMovie(${index})">Редактировать</button>
+                        <button onclick="deleteMovie(${index})">Удалить</button>
+                    </td>
+                `;
+                movieTable.appendChild(row);
+            });
+        };
+        const saveMovies = () => {
+            localStorage.setItem('movies', JSON.stringify(movies));
+        };
+        const addOrEditMovie = (event) => {
+            event.preventDefault();
+            const title = document.getElementById('title').value.trim();
+            const genre = document.getElementById('genre').value.trim();
+            const year = document.getElementById('year').value.trim();
+            const watched = document.getElementById('watched').value;
+            const editIndex = parseInt(document.getElementById('editIndex').value, 10);
+            if (!title || !genre || !year) {
+                formError.textContent = 'Все поля должны быть заполнены!';
+                return;
+            }
+            formError.textContent = '';
+            const newMovie = {
+                title,
+                genre,
+                year: parseInt(year, 10),
+                watched
+            };
+            if (editIndex === -1) {
+                movies.push(newMovie);
+            } else {
+                movies[editIndex] = newMovie;
+                document.getElementById('editIndex').value = -1;
+            }
+            saveMovies();
+            renderMovies();
+            movieForm.reset();
+        };
+        const deleteMovie = (index) => {
+            movies.splice(index, 1);
+            saveMovies();
+            renderMovies();
+        };
+        const editMovie = (index) => {
+            const movie = movies[index];
+            document.getElementById('title').value = movie.title;
+            document.getElementById('genre').value = movie.genre;
+            document.getElementById('year').value = movie.year;
+            document.getElementById('watched').value = movie.watched;
+            document.getElementById('editIndex').value = index;
+        };
+        const sortMovies = () => {
+            const criteria = sortCriteria.value;
+            movies.sort((a, b) => {
+                if (a[criteria] < b[criteria]) return -1;
+                if (a[criteria] > b[criteria]) return 1;
+                return 0;
+            });
+            renderMovies();
+        };
+        movieForm.addEventListener('submit', addOrEditMovie);
+        sortCriteria.addEventListener('change', sortMovies);
+        renderMovies();
+    </script>
+</body>
+
+</html>
